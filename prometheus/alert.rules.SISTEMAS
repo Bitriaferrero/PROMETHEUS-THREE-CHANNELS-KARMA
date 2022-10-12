@@ -1,0 +1,104 @@
+groups:
+- name: targets
+  rules:
+
+# Alert for any instance that is unreachable for >2 minutes.
+  - alert: InstanceDown
+    expr: up == 0
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Instancia {{ $labels.instance }} CAIDA"
+#description: "{{ $labels.instance }} de {{ $labels.job }} ha estado sin respuesta por más de 2 minutos."  
+
+
+########################################## ALERTA DE ESPACIO DE DISCO EN EL NODO UBUNTU PROMETHEUS #########################################
+  - alert: DiskSpace<30%
+    expr: (node_filesystem_avail_bytes{mountpoint="/"}*100) / node_filesystem_size_bytes < 30 and ON (instance, device, mountpoint) node_filesystem_readonly == 0
+    for: 1s
+    labels:
+      severity: warning
+      cluster: UBUNTU-PROMETHEUS
+    annotations:
+    # summary: "Host out of disk space (instance {{ $labels.instance }})"
+      description: "El uso del disco es = {{humanize $value }}"
+
+
+
+
+################################################  ALERTAS  WINDOWS SERVERS  ##################################################################
+
+
+#  #################################################
+#  win_proc_Handle_Count si es 0 disparar alarma
+#  - alert: windows_service_status
+#    expr:   up{job="confCons_WSUS"} == 0  unless windows_service_status
+#    for: 1m
+#    labels:
+#      severity: warning
+#    annotations:
+#      summary: Handle Count ERROR {{$labels.instance}}
+
+
+#MONITORIZAR WSUS  
+  - alert: WSUS Service
+    expr:  windows_service_state {name="wsusservice",state="running"} != 1
+    for: 0m
+    labels:
+      severity: medium
+      cluster: TEST
+    annotations:
+      summary: WSUS Service (instance {{ $labels.instance }})
+      #description: "Windows Service state is not OK\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+
+  - alert: PrometheusJobMissing
+    expr: absent(up{job="TEST_BATEST"})
+    for: 0m
+    labels:
+      severity: warning
+    annotations:
+      summary: Prometheus job missing (instance {{ $labels.instance }})
+      description: "A Prometheus job has disappeared\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+
+# SERVIDOR ARRANCADO HACE MENOS DE 1 HORA 3600 15m
+  - alert: UpTimeLessThanOneHour
+    expr: time() - windows_system_system_up_time  < 3600
+    for: 1m
+    labels:
+      severity: info
+    annotations:
+      summary: Up Time of less than 1 hour in instance {{$labels.instance}}
+
+# SATURACION DE PAQUETES DE RED RECIBIDOS > 75 tiempo 10m
+  - alert: HighInboundErrorRate
+    expr: 100 * rate(windows_net_packets_received_errors[5m]) / (rate(windows_net_packets_received_errors[5m]) + rate(windows_net_packets_received_total[5m])>0)  > 5
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: High inbound network error rate in instance {{$labels.instance}}
+
+# SATURACION DE PAQUETES DE RED ENVIADOS > 75 tiempo 5min
+  - alert: HighOutboundErrorRate
+    expr: 100 * rate(windows_net_packets_outbound_errors[5m]) / (rate(windows_net_packets_outbound_errors[5m]) + rate(windows_net_packets_sent_total[5m])>0)  > 5
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: High outbound network error rate in instance {{$labels.instance}}
+
+
+
+# Windows Server service Status
+#  - alert: WindowsServerServiceStatus
+#    expr: windows_service_status{status="ok"} != 1
+#    for: 1m
+#    labels:
+#      severity: critical
+#    annotations:
+#      summary: Windows Server service Status (instance {{ $labels.instance }})
+##      description: "Windows Service state is not OK\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+

@@ -1,0 +1,182 @@
+version: '2.1'
+
+networks:
+  monitor-net:
+    driver: bridge
+
+volumes:
+    prometheus_data: {}
+    grafana_data: {}
+
+services:
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+       # PERIODO DE RETENCION DE METRICAS PROMETHEUS
+       # - '--storage.tsdb.retention.time=200h' VALOR OLD
+      - '--storage.tsdb.retention.time=7d'
+       # Espacio maximo para uso de metricas en disco
+       #- '--storage.tsdb.retention.size=100GB'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    ports:
+      - 9090:9090
+    networks:
+      - monitor-net
+    labels:
+      org.label-schema.group: "monitoring"
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+      - ./alertmanager/:/etc/alertmanager/
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    restart: unless-stopped
+    ports:
+      - 9093:9093
+    networks:
+      - monitor-net
+    labels:
+      org.label-schema.group: "monitoring"
+
+
+  nodeexporter:
+    image: prom/node-exporter:latest
+    container_name: nodeexporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    restart: unless-stopped
+    ports:
+      - 9100:9100
+    networks:
+      - monitor-net
+    labels:
+      org.label-schema.group: "monitoring"
+
+  cadvisor:
+    image: google/cadvisor:v0.33.0
+
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /cgroup:/cgroup:ro #doesn't work on MacOS only for Linux
+    restart: unless-stopped
+    ports:
+      - 8081:8081
+    networks:
+      - monitor-net
+    labels:
+      org.label-schema.group: "monitoring"
+
+  pushgateway:
+    image: prom/pushgateway:v0.9.1
+    container_name: pushgateway
+    restart: unless-stopped
+    ports:
+      - 9091:9091
+    networks:
+      - monitor-net
+    labels:
+      org.label-schema.group: "monitoring"
+
+
+ # exporter:
+ #   image: neerajjain1986/api-health-prometheus-exporter:latest
+ #   container_name: exporter
+ #   restart: unless-stopped
+ #   ports:
+ #     - 5002:5002
+ #   networks:
+ #     - monitor-net
+ #   labels:
+ #     org.label-schema.group: "monitoring"
+
+  prometheus-msteams:
+    image: docker.io/bzon/prometheus-msteams:latest
+    container_name: prometheus-msteams
+    restart: unless-stopped
+
+    volumes:
+       - ./msteams/config.yml:/etc/msteams/config.yml
+      #- ./msteams/:/etc/msteams
+      #- msteams_data:/msteams
+    #command:
+       #- '--config.file=/etc/msteams/config.yml'
+       #- '--config.file=/etc/msteams/config.yml'
+       #- '--teams-request-uri=alertmanager'
+    environment:
+        #- TEAMS_INCOMING_WEBHOOK_URL=https://outlook.office.com/webhook/webhook_url#        #- TEAMS_INCOMING_WEBHOOK_URL=https://multinucleo.webhook.office.com/webhookb2/6d0283bf-7eb6-4b80-a1f2-b2bf49de7735@fe633a44-a92e-47a1-9a61-16e906016897/IncomingWebhook/b2366ec6671f46aeac02a7a25ccc2f3f/25fc93fe-6658-4f9c-9b1f-9395d8b42cd5
+        #- TEAMS_INCOMING_WEBHOOK_URL=https://multinucleo.webhook.office.com/webhookb2/6d0283bf-7eb6-4b80-a1f2-b2bf49de7735@fe633a44-a92e-47a1-9a61-16e906016897/IncomingWebhook/3e95c8d1af3b44cd9a1b7689a45d15d9/25fc93fe-6658-4f9c-9b1f-9395d8b42cd5       
+        #-CANAL PROMETHEUS GENERAL
+        #- TEAMS_INCOMING_WEBHOOK_URL=https://multinucleo.webhook.office.com/webhookb2/6d0283bf-7eb6-4b80-a1f2-b2bf49de7735@fe633a44-a92e-47a1-9a61-16e906016897/IncomingWebhook/f316a9f65b9c4c859136e9e373db7cbc/25fc93fe-6658-4f9c-9b1f-9395d8b42cd5
+        # CANAL PROMETHEUS  WARNINGS
+        #- TEAMS_INCOMING_WEBHOOK_URL=https://multinucleo.webhook.office.com/webhookb2/6d0283bf-7eb6-4b80-a1f2-b2bf49de7735@fe633a44-a92e-47a1-9a61-16e906016897/IncomingWebhook/33bba6c1fab3418a850c157a4612f904/25fc93fe-6658-4f9c-9b1f-9395d8b42cd5
+        #- TEAMS_REQUEST_URI=alertmanager
+        - CONFIG_FILE=/etc/msteams/config.yml
+        #- config-file=/etc/msteams/config.yml
+        - TEMPLATE-FILE=./msteams/card.tmpl        
+        #- TEAMS_REQUEST_URI=alertmanager
+        #- TEAMS-REQUEST-URI=alertmanager
+        #- teams-request-uri=alertmanager
+    ports:
+      - 2000:2000
+    networks:
+      - monitor-net
+    labels:
+      org.label-schema.group: "monitoring"
+
+  
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    networks:
+      - monitor-net
+    labels:
+      org.label-schema.group: "monitoring"
+
+  karma:
+    image: ghcr.io/prymitive/karma:v0.106
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    volumes:
+      - ./karma/karma.yml:/etc/karma/karma.yml
+    command:
+      - '--config.file=/etc/karma/karma.yml'
+    networks:
+      - monitor-net
+
+
+

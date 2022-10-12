@@ -1,0 +1,3 @@
+git remote add origin https://github.com/Bitriaferrero/PROMETHEUS-MNTEAMS-3CHANNELS.git
+git branch -M main
+git push -u origin main

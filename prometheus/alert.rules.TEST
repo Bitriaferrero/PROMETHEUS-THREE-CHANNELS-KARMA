@@ -1,0 +1,63 @@
+groups:
+- name: targets
+  rules:
+
+
+################################################  ALERTAS  WINDOWS SERVERS  ##################################################################
+
+
+#MONITORIZAR SERVICIO MNIAGPricingLoader
+  - alert: MNIAGPricingLoader
+    expr: windows_service_state {name="mniagpricingloader",state="running"} != 1
+    for: 0m
+    labels:
+      severity: warning
+      cluster: TEST
+    annotations:
+      summary: MNIAGPricingLoader Service DOWN (instance {{ $labels.instance }})
+      #description: "Service MNIAGLOADER DOWN state is not OK\n" 
+
+#MONITORIZAR MNIAGPricingDaemon
+  - alert: MNIAGPricingDaemon
+    expr: windows_service_state {name="mniagdaemonpricing",state="running"} != 1
+    for: 0m
+    labels:
+      severity: warning
+      cluster: TEST
+    annotations:
+      summary: MNIAGPricingDaemon Service DOWN (instance {{ $labels.instance }})
+      #description: "Windows Service MNIAGDAEMON DOWN state is not OK\n"
+ 
+##########################################################################
+
+
+#ALERTA DE ESPACIO EN DISCO TEST
+  - alert: LogicalDiskFull
+    expr: 100 * (windows_logical_disk_size_bytes - windows_logical_disk_free_bytes) / windows_logical_disk_size_bytes  > 80
+    for: 1m
+    labels:
+      severity: warning
+      cluster: TEST
+    annotations:
+      summary: Disk {{$labels.volume}} full over 95% in instance {{$labels.instance}}
+
+
+# CPU EN USO MAS DEL 95% time 15m
+  - alert: HighCPUUsage
+    expr: 100 * sum by (instance) (rate(windows_cpu_time_total{mode != 'idle'}[5m])) / count by (instance) (windows_cpu_core_frequency_mhz) > 80
+    for: 1m
+    labels:
+      severity: warning
+      cluster: TEST
+    annotations:
+      summary: High CPU usage in instance {{$labels.instance}}
+
+# MEMORIA EN USO MAS DEL 95% 15m
+  - alert: HighPhysicalMemoryUsage
+    expr: 100 * (windows_cs_physical_memory_bytes - windows_os_physical_memory_free_bytes) / windows_cs_physical_memory_bytes  > 90
+    for: 2m
+    labels:
+      severity: warning
+      cluster: TEST
+    annotations:
+      summary: High physical memory usage in instance {{$labels.instance}}

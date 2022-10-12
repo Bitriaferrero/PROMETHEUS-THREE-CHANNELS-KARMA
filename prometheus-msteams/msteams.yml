@@ -1,0 +1,5 @@
+# alerts in the connectors here will use the default template.
+connectors:
+- alert1: "https://multinucleo.webhook.office.com/webhookb2/6d0283bf-7eb6-4b80-a1f2-b2bf49de7735@fe633a44-a92e-47a1-9a61-16e906016897/IncomingWebhook/f316a9f65b9c4c859136e9e373db7cbc/25fc93fe-6658-4f9c-9b1f-9395d8b42cd5"
+
+

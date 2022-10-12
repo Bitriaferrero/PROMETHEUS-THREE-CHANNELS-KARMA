@@ -1,0 +1,6 @@
+connectors:
+- high_priority_channel: "webhook1:https://"
+- medium_priority_channel: "wehook2:https://"
+- low_priority_channel: "webhook3:https://"
+namespace: monitoring
+
