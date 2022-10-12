@@ -4,5 +4,4 @@ Prometheus , Karma , Alertmanager
 y enviadas por  3 canales diferenetes a traves de 3 webhook por MSTEAMS.
 - KARMA - Panel para visualizar alertas de alertmanager.
 # PROMETHEUS-MSTEAMS-THREECHANNELS-KARMA
-# PROMETHEUS-THREE-CHANNELS
-# PROMETHEUS-THREE-CHANNELS3
+
