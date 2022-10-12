@@ -1,0 +1,31 @@
+global:
+  resolve_timeout: 5m
+
+receivers:
+- name: devnull
+- name: prometheus-msteams-warning
+  webhook_configs:
+  - url: "http://prometheus-msteams:2000/alertmanager-warning"
+    send_resolved: true
+- name: prometheus-msteams-critical
+  webhook_configs:
+  - url: "https://prometheus-msteams:2000/alertmanager-critical"
+
+route:
+  group_by: ['...']
+  group_interval: 1m
+  group_wait: 1m
+  repeat_interval:5m
+  receiver: devnull
+
+  routes:
+  - receiver: prometheus-msteams-warning
+    match:
+      severity: warning
+    continue:true
+
+  - receiver: prometheus-msteams-critical
+    match:
+      severity:critical
+
+

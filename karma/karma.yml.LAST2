@@ -1,0 +1,48 @@
+alertmanager:
+  interval: 1m
+  servers:
+    - name: alertmanager
+      uri: http://10.196.41.240:9093
+      timeout: 20s
+authentication:
+  basicAuth:
+    users:
+      - username: admin
+        password: admin
+
+labels:
+  color:
+    custom:
+      "@alertmanager":
+        - value: TEST
+          color: "#e6e"
+
+
+      severity:
+        - value: warning
+          color: "#f5de33"
+        - value: media
+          color: "#f5a733"
+        - value: critical
+          color: "#fa021b"
+  
+      cluster:
+        - value: TEST
+          color: "#f5de33"
+        - value: CERT
+          color: "#736598"
+        - value: SISTEMAS
+          color: "#36d9d9"
+
+
+      instance:
+        - value_re: ".*"
+          color: "#3657d9"
+
+      job:
+        - value_re: ".*"
+          color: "#368ad9"  
+
+      name:
+        - value_re: ".*"
+          color: "#36d959"

@@ -1,0 +1,11 @@
+alertmanager:
+  interval: 1m
+  servers:
+    - name: alertmanager
+      uri: http://10.196.41.240:9093
+      timeout: 20s
+authentication:
+  basicAuth:
+    users:
+      - username: admin
+        password: admin
